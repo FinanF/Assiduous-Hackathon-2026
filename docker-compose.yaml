@@ -1,0 +1,28 @@
+services:
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: ibm_db
+    ports:
+      - "5000:3306"  # Host 5000 → container 3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./SQL:/docker-entrypoint-initdb.d
+
+  fastapi:
+    build:
+      context: ./FastAPI  # ← Points to FastAPI subfolder
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - API_KEY=5SZZHJZW73ANIYZ4
+      - DATABASE_URL=mysql+mysqlconnector://root:password@mysql:3306/ibm_db
+    depends_on:
+      - mysql
+    volumes:
+      - ./FastAPI:/app
+
+volumes:
+  mysql_data:

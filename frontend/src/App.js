@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Slider } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { exportPNG, exportExcel, exportPDF } from './exportUtils';
 import axios from 'axios';
 
 function App() {
   const [data, setData] = useState(null);
   const [health, setHealth] = useState(null);
   const [nthQuater, setNthQuater] = useState(4);
+  const chartRef = useRef();
+
 
   const fetchSyncData = useCallback(async () => {
     try {
@@ -26,7 +29,12 @@ function App() {
     } catch (error) {
       console.error('Forecast error:', error);
     }
-  }, [nthQuater]);  // ✅ Depends on nthQuater
+  }, [nthQuater]);
+
+  const handlePNG = () => exportPNG(chartRef, `forecast-${nthQuater}q.png`);
+  const handleExcel = () => exportExcel(chartData, `forecast-${nthQuater}q.xlsx`);
+  const handlePDF = () => exportPDF(chartRef, `forecast-${nthQuater}q.pdf`);
+
 
   useEffect(() => {
     fetchSyncData();
@@ -77,19 +85,26 @@ function App() {
           onChange={(event, value) => setNthQuater(value)}
         />
       </div>
+        <div ref={chartRef}>
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="quarter" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="base" stroke="#8884d8" name="Base Case" />
+              <Line type="monotone" dataKey="upside" stroke="#82ca9d" name="Upside" />
+              <Line type="monotone" dataKey="downside" stroke="#ff7300" name="Downside" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{marginBottom: '20px'}}>
+        <button onClick={handlePNG}>PNG</button>
+        <button onClick={handleExcel}>Excel</button>
+        <button onClick={handlePDF}>PDF</button>
+      </div>
 
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="quarter" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="base" stroke="#8884d8" name="Base Case" />
-          <Line type="monotone" dataKey="upside" stroke="#82ca9d" name="Upside" />
-          <Line type="monotone" dataKey="downside" stroke="#ff7300" name="Downside" />
-        </LineChart>
-      </ResponsiveContainer>
     </div>
   );
 }

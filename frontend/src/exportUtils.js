@@ -1,8 +1,9 @@
+// noinspection JSPotentiallyInvalidConstructorUsage
+
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import * as jspdf from "jspdf";
 
 export const exportPNG = async (chartRef, filename) => {
   const canvas = await html2canvas(chartRef.current, { scale: 2 });
@@ -19,7 +20,7 @@ export const exportExcel = (chartData, filename) => {
 export const exportPDF = async (chartRef, filename) => {
   const canvas = await html2canvas(chartRef.current, { scale: 2 });
   const imgData = canvas.toDataURL('image/png');
-  const pdf = new jspdf('l', 'mm', 'a4');
+  const pdf = new jsPDF('l', 'mm', 'a4');
   const imgWidth = 280;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
   pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);

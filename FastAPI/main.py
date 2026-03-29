@@ -6,7 +6,6 @@ import os
 from dotenv import load_dotenv
 import mysql.connector
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
 
 app = FastAPI()
 load_dotenv()
@@ -98,5 +97,5 @@ def forecast(quarters: int = 1):
         "quarters": quarters,
         "predictions": {"base": [round(p, 2) for p in predictions],
                         "upside": [round(p*1.15, 2) for p in predictions],  # +15% optimistic
-                        "downside": [round(p*0.85, 2) for p in predictions]}  # -15% pessimistic
+        "downside": [round(p*0.85, 2) for p in predictions]}  # -15% pessimistic
     }

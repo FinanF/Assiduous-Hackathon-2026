@@ -1,24 +1,4 @@
-version: '3.8'
 services:
-  mysql:
-    image: mysql:latest
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: ibm_forecast
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-    ports:
-      - "5000:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./SQL:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
   frontend:
     build: ./frontend
     ports:
@@ -33,13 +13,10 @@ services:
     build:
       context: ./FastAPI
       dockerfile: Dockerfile
-    environment:
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      MYSQL_DATABASE: ibm_forecast
     depends_on:
-      - mysql
-      - fastapi
+      fastapi:
+        condition: service_started
+
     command: python train_model.py
     volumes:
       - ./FastAPI:/app
@@ -51,19 +28,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      API_KEY: 5SZZHJZW73ANIYZ4
-      DATABASE_URL: mysql+pymysql://user:password@mysql:3306/ibm_forecast
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      MYSQL_DATABASE: ibm_forecast
+      API_KEY: 1W1NOQU2N2I0OXSY
+      DATABASE_URL: sqlite:///earnings.db
       CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
     volumes:
       - ./FastAPI:/app
-    depends_on:
-      mysql:
-        condition: service_healthy
-    restart: unless-stopped
-
 
 volumes:
-  mysql_data:
+  earnings_data:

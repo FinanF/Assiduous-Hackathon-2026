@@ -6,11 +6,13 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from fastapi.middleware.cors import CORSMiddleware
+import numpy as np
 
 load_dotenv()
 
 app = FastAPI()
 
+# Middleware for React.js and FastAPI  communication
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -19,13 +21,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# SQLite connection
 engine = create_engine(
     os.getenv("DATABASE_URL", "sqlite:///earnings.db"),
     connect_args={"check_same_thread": False}
 )
 
+# SQLite table for storing training data
 def ensure_table():
-    """Fixed table schema matching code"""
     with engine.connect() as conn:
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS earnings (
@@ -51,6 +54,7 @@ async def get_data():
     url = f'https://www.alphavantage.co/query?function=EARNINGS&symbol=IBM&apikey={os.getenv("API_KEY")}'
     return requests.get(url).json()
 
+# Stores training data to database
 @app.post("/sync-data")
 async def sync_data():
     try:
@@ -79,7 +83,7 @@ async def sync_data():
             conn.execute(text("DELETE FROM earnings"))
             conn.commit()
 
-        # Row-by-row insert (FIXED column names)
+        # Row-by-row insert
         for item in earnings:
             row = {
                 'symbol': 'IBM',
@@ -106,6 +110,7 @@ async def sync_data():
         return {"error": str(e)}
 
 
+# Runs prediction model for graphing
 @app.get("/forecast/{quarters}")
 async def forecast(quarters: int = 1):
     try:
@@ -118,15 +123,13 @@ async def forecast(quarters: int = 1):
 
         last_row = df.iloc[0]
 
-        # **ORDER MATCHES TRAINING EXACTLY**
         feature_vector = [
             float(last_row['reported_eps']),  # lag1_eps
             float(last_row['surprise_percentage']),  # surprise_percentage
             float(pd.to_datetime(last_row['fiscal_date_ending']).quarter)  # quarter
         ]
 
-        # Use numpy array WITHOUT column names to avoid sklearn validation
-        import numpy as np
+
         input_data = np.array([feature_vector])
 
         base_pred = model.predict(input_data)[0]
@@ -148,6 +151,7 @@ async def forecast(quarters: int = 1):
     except Exception as e:
         return {"error": str(e)}
 
+# Model accuracy value
 @app.get("/model-info")
 async def model_info():
     try:
@@ -160,6 +164,5 @@ async def model_info():
 async def table_rows():
     ensure_table()
     df = pd.read_sql("SELECT * FROM earnings ORDER BY fiscal_date_ending", engine)
-    # Return Python list directly (no pandas JSON issues)
     records = df.to_dict(orient='records')
-    return records  # FastAPI auto-converts to clean JSON
+    return records

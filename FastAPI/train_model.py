@@ -3,16 +3,13 @@ import joblib
 import requests
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import r2_score
 import os
 import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
-
-
-
+# Calls database insertion and retrieves data
 def retry_sync():
     global df_response
     try:
@@ -39,7 +36,7 @@ def retry_sync():
 
     return pd.DataFrame()
 
-
+# Trains prediction model
 def train_model(df):
     print(f"Training on {len(df)} rows")
 
@@ -51,7 +48,7 @@ def train_model(df):
     df['quarter'] = pd.to_datetime(df['fiscal_date_ending']).dt.quarter
     df['next_eps'] = df['reported_eps'].shift(-1)
 
-    # SINGLE dropna() - keeps X and y perfectly aligned
+    # keeps X and y perfectly aligned
     df_clean = df[['lag1_eps', 'quarter', 'surprise_percentage', 'next_eps']].dropna()
 
     X = df_clean[['lag1_eps', 'quarter', 'surprise_percentage']]
